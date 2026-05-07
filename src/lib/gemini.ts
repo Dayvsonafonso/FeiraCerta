@@ -10,6 +10,7 @@ export interface Product {
   previousPrice: number;
   quantity: number;
   description?: string;
+  createdAt: string;
 }
 
 export interface AiInsight {

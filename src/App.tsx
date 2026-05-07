@@ -119,7 +119,8 @@ export default function App() {
         currentPrice: Number(p.current_price),
         previousPrice: Number(p.previous_price),
         quantity: Number(p.quantity || 1),
-        description: p.description
+        description: p.description,
+        createdAt: p.created_at
       }));
       setProducts(mapped);
     }
@@ -192,21 +193,47 @@ export default function App() {
     if (!error) setProducts(products.filter(p => p.id !== id));
   };
 
-  const totals = useMemo(() => {
-    const current = products.reduce((sum, p) => sum + (p.currentPrice * p.quantity), 0);
-    const prev = products.reduce((sum, p) => sum + (p.previousPrice * p.quantity), 0);
-    const { diff, percent } = calculateVariation(current, prev);
-    return { current, prev, diff, percent };
+  const currentMonthProducts = useMemo(() => {
+    const now = new Date();
+    return products.filter(p => {
+      const d = new Date(p.createdAt);
+      return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+    });
   }, [products]);
+
+  const prevMonthProducts = useMemo(() => {
+    const now = new Date();
+    const prevMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    return products.filter(p => {
+      const d = new Date(p.createdAt);
+      return d.getMonth() === prevMonthDate.getMonth() && d.getFullYear() === prevMonthDate.getFullYear();
+    });
+  }, [products]);
+
+  const totals = useMemo(() => {
+    const currentTotal = currentMonthProducts.reduce((sum, p) => sum + (p.currentPrice * p.quantity), 0);
+    // The previous month's actual expenditure is the sum of its items' currentPrices!
+    const prevTotal = prevMonthProducts.reduce((sum, p) => sum + (p.currentPrice * p.quantity), 0);
+    const diff = currentTotal - prevTotal;
+    
+    let percent = 0;
+    if (prevTotal > 0) {
+      percent = (diff / prevTotal) * 100;
+    } else if (currentTotal > 0) {
+      percent = 100;
+    }
+
+    return { current: currentTotal, prev: prevTotal, diff, percent };
+  }, [currentMonthProducts, prevMonthProducts]);
 
   const chartData = useMemo(() => {
     return CATEGORIES.map(cat => {
-      const current = products
+      const current = currentMonthProducts
         .filter(p => p.category === cat)
         .reduce((sum, p) => sum + (p.currentPrice * p.quantity), 0);
       return { name: cat, total: current };
     }).filter(d => d.total > 0);
-  }, [products]);
+  }, [currentMonthProducts]);
 
   return (
     <div className="min-h-screen bg-[#F9FAFB] dark:bg-[#0F172A] text-[#111827] dark:text-gray-100 font-sans pb-24 lg:pb-0 transition-colors duration-200">
@@ -289,7 +316,7 @@ export default function App() {
             <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
               {/* Product List Component */}
               <ProductList 
-                products={products}
+                products={currentMonthProducts}
                 categories={CATEGORIES}
                 filterCategory={filterCategory}
                 setFilterCategory={setFilterCategory}
@@ -300,7 +327,7 @@ export default function App() {
 
               <div className="space-y-6">
                 {/* AI Card Component */}
-                <AiCard products={products} />
+                <AiCard products={currentMonthProducts} />
 
                 {chartData.length > 0 && (
                   <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-[#1E293B] p-6 shadow-sm transition-colors">
