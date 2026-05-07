@@ -501,8 +501,9 @@ export default function App() {
                 </div>
               </div>
             )}
+            </div>
           </div>
-        </div>
+        )}
 
         {activeTab === "history" && (
           <div className="animate-in slide-in-from-bottom-4 duration-500">
