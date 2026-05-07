@@ -60,7 +60,13 @@ export default function App() {
     return false;
   });
 
-  const [products, setProducts] = useState<Product[]>([]);
+  const [products, setProducts] = useState<Product[]>(() => {
+    if (typeof window !== "undefined") {
+      const cached = localStorage.getItem("products_cache");
+      return cached ? JSON.parse(cached) : [];
+    }
+    return [];
+  });
   const [formData, setFormData] = useState({
     name: "",
     category: "🍎 Frutas",
@@ -69,7 +75,7 @@ export default function App() {
     quantity: "",
     description: ""
   });
-  const [isLoadingProducts, setIsLoadingProducts] = useState(true);
+  const [isLoadingProducts, setIsLoadingProducts] = useState(false); // Start false if we have cache
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [filterCategory, setFilterCategory] = useState("Todas");
@@ -124,14 +130,16 @@ export default function App() {
   };
 
   const fetchProducts = async () => {
-    setIsLoadingProducts(true);
+    // Only show loading if we don't have products yet
+    if (products.length === 0) setIsLoadingProducts(true);
+    
     const { data, error } = await supabase
       .from("products")
       .select("*")
       .order("created_at", { ascending: false });
 
     if (error) {
-      console.error("Error:", error);
+      console.error("Error fetching products:", error);
     } else {
       const mapped = data.map((p: any) => ({
         id: p.id,
@@ -143,7 +151,10 @@ export default function App() {
         description: p.description,
         createdAt: p.created_at
       }));
+      
+      // Update state and cache
       setProducts(mapped);
+      localStorage.setItem("products_cache", JSON.stringify(mapped));
     }
     setIsLoadingProducts(false);
   };
