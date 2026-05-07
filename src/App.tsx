@@ -56,6 +56,24 @@ export default function App() {
     fetchProducts();
   }, []);
 
+  const formatInputCurrency = (value: string) => {
+    // Remove non-digits
+    const digits = value.replace(/\D/g, "");
+    if (!digits) return "";
+    
+    // Convert to number and format
+    const number = parseInt(digits) / 100;
+    return number.toLocaleString("pt-BR", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
+  };
+
+  const parseCurrencyToNumber = (value: string) => {
+    if (!value) return 0;
+    return parseFloat(value.replace(/\./g, "").replace(",", "."));
+  };
+
   const fetchProducts = async () => {
     setIsLoadingProducts(true);
     const { data, error } = await supabase
@@ -84,8 +102,8 @@ export default function App() {
     e.preventDefault();
     if (!formData.name || !formData.currentPrice) return;
 
-    const currentPrice = parseFloat(formData.currentPrice);
-    const previousPrice = formData.previousPrice ? parseFloat(formData.previousPrice) : currentPrice;
+    const currentPrice = parseCurrencyToNumber(formData.currentPrice);
+    const previousPrice = formData.previousPrice ? parseCurrencyToNumber(formData.previousPrice) : currentPrice;
 
     const newProduct = {
       name: formData.name,
@@ -503,12 +521,12 @@ export default function App() {
                     <div className="relative">
                       <span className="absolute left-4 top-1/2 -translate-y-1/2 font-medium text-gray-500">R$</span>
                       <input 
-                        type="number"
-                        step="0.01"
+                        type="text"
+                        inputMode="numeric"
                         required
                         placeholder="0,00"
                         value={formData.currentPrice}
-                        onChange={e => setFormData({ ...formData, currentPrice: e.target.value })}
+                        onChange={e => setFormData({ ...formData, currentPrice: formatInputCurrency(e.target.value) })}
                         className="w-full rounded-xl border border-gray-300 bg-gray-50 pl-11 pr-4 py-3 outline-none transition-all focus:border-[#2563EB] focus:bg-white focus:ring-2 focus:ring-blue-100"
                       />
                     </div>
@@ -518,11 +536,11 @@ export default function App() {
                     <div className="relative">
                       <span className="absolute left-4 top-1/2 -translate-y-1/2 font-medium text-gray-500">R$</span>
                       <input 
-                        type="number"
-                        step="0.01"
+                        type="text"
+                        inputMode="numeric"
                         placeholder="0,00"
                         value={formData.previousPrice}
-                        onChange={e => setFormData({ ...formData, previousPrice: e.target.value })}
+                        onChange={e => setFormData({ ...formData, previousPrice: formatInputCurrency(e.target.value) })}
                         className="w-full rounded-xl border border-gray-300 bg-gray-50 pl-11 pr-4 py-3 outline-none transition-all focus:border-[#2563EB] focus:bg-white focus:ring-2 focus:ring-blue-100"
                       />
                     </div>
