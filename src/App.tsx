@@ -257,7 +257,9 @@ export default function App() {
           <section>
             {/* Header */}
             <header className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-              <div>
+                <div className="mb-2 inline-block rounded bg-red-600 px-2 py-1 text-[10px] font-bold text-white">
+                  VERSÃO ATUALIZADA (COM ALERTAS)
+                </div>
                 <h1 className="text-2xl font-bold text-[#111827]">Controle de Gastos de Feira</h1>
                 <p className="text-gray-500">Acompanhe a variação de preços e economize de forma inteligente.</p>
               </div>
