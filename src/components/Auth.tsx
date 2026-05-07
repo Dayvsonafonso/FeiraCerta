@@ -131,6 +131,12 @@ export function Auth() {
             {isLogin ? 'Não tem uma conta? Cadastre-se' : 'Já tem uma conta? Faça login'}
           </button>
         </div>
+
+        <div className="mt-8 pt-6 border-t border-gray-100 dark:border-gray-800 text-center">
+          <p className="text-[10px] text-gray-400 dark:text-gray-600 uppercase tracking-widest font-bold">
+            FeiraCerta v1.0.1 - Segurança Ativa
+          </p>
+        </div>
       </div>
     </div>
   );
