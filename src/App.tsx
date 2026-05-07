@@ -403,13 +403,20 @@ export default function App() {
                     <h3 className="mb-6 font-bold text-sm">Gastos por Categoria</h3>
                     <div className="h-48">
                       <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={chartData}>
-                          <XAxis dataKey="name" hide />
+                        <BarChart data={chartData} margin={{ bottom: 20 }}>
+                          <XAxis 
+                            dataKey="name" 
+                            tick={{ fontSize: 10, fill: '#6B7280' }}
+                            interval={0}
+                            angle={-45}
+                            textAnchor="end"
+                          />
                           <RechartsTooltip 
                             content={({ active, payload }) => {
                               if (active && payload?.length) return (
-                                <div className="bg-white p-2 shadow-xl border rounded-lg text-xs font-bold">
-                                  {formatCurrency(payload[0].value as number)}
+                                <div className="bg-white p-3 shadow-xl border rounded-lg text-xs font-bold space-y-1">
+                                  <p className="text-gray-500">{payload[0].payload.name}</p>
+                                  <p className="text-blue-600 text-sm">{formatCurrency(payload[0].value as number)}</p>
                                 </div>
                               );
                               return null;
