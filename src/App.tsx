@@ -28,15 +28,14 @@ import {
 import { Product, getSavingInsights, AiInsight } from "./lib/gemini";
 import { cn, formatCurrency, calculateVariation } from "./lib/utils";
 
+import { supabase } from "./lib/supabase";
+
 const CATEGORIES = [
   "Frutas", "Legumes", "Verduras", "Açougue", "Padaria", "Laticínios", "Limpeza", "Outros"
 ];
 
 export default function App() {
-  const [products, setProducts] = useState<Product[]>(() => {
-    const saved = localStorage.getItem("ecoFeira_products");
-    return saved ? JSON.parse(saved) : [];
-  });
+  const [products, setProducts] = useState<Product[]>([]);
   
   const [formData, setFormData] = useState({
     name: "",
@@ -48,33 +47,86 @@ export default function App() {
 
   const [aiInsights, setAiInsights] = useState<AiInsight | null>(null);
   const [isLoadingAi, setIsLoadingAi] = useState(false);
+  const [isLoadingProducts, setIsLoadingProducts] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [filterCategory, setFilterCategory] = useState("Todas");
 
+  // Fetch products from Supabase on mount
   useEffect(() => {
-    localStorage.setItem("ecoFeira_products", JSON.stringify(products));
-  }, [products]);
+    fetchProducts();
+  }, []);
 
-  const handleAddProduct = (e: React.FormEvent) => {
+  const fetchProducts = async () => {
+    setIsLoadingProducts(true);
+    const { data, error } = await supabase
+      .from("products")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error("Error fetching products:", error);
+    } else {
+      // Map database snake_case to frontend camelCase
+      const mappedProducts: Product[] = data.map((p: any) => ({
+        id: p.id,
+        name: p.name,
+        category: p.category,
+        currentPrice: Number(p.current_price),
+        previousPrice: Number(p.previous_price),
+        description: p.description
+      }));
+      setProducts(mappedProducts);
+    }
+    setIsLoadingProducts(false);
+  };
+
+  const handleAddProduct = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name || !formData.currentPrice || !formData.previousPrice) return;
 
-    const newProduct: Product = {
-      id: crypto.randomUUID(),
+    const newProduct = {
       name: formData.name,
       category: formData.category,
-      currentPrice: parseFloat(formData.currentPrice),
-      previousPrice: parseFloat(formData.previousPrice),
+      current_price: parseFloat(formData.currentPrice),
+      previous_price: parseFloat(formData.previousPrice),
       description: formData.description
     };
 
-    setProducts([newProduct, ...products]);
-    setFormData({ name: "", category: "Frutas", currentPrice: "", previousPrice: "", description: "" });
-    setShowForm(false);
+    const { data, error } = await supabase
+      .from("products")
+      .insert([newProduct])
+      .select();
+
+    if (error) {
+      console.error("Error adding product:", error);
+      alert("Erro ao adicionar produto no banco de dados.");
+    } else if (data) {
+      const addedProduct: Product = {
+        id: data[0].id,
+        name: data[0].name,
+        category: data[0].category,
+        currentPrice: Number(data[0].current_price),
+        previousPrice: Number(data[0].previous_price),
+        description: data[0].description
+      };
+      setProducts([addedProduct, ...products]);
+      setFormData({ name: "", category: "Frutas", currentPrice: "", previousPrice: "", description: "" });
+      setShowForm(false);
+    }
   };
 
-  const removeProduct = (id: string) => {
-    setProducts(products.filter(p => p.id !== id));
+  const removeProduct = async (id: string) => {
+    const { error } = await supabase
+      .from("products")
+      .delete()
+      .eq("id", id);
+
+    if (error) {
+      console.error("Error removing product:", error);
+      alert("Erro ao remover produto.");
+    } else {
+      setProducts(products.filter(p => p.id !== id));
+    }
   };
 
   const analyzeWithAi = async () => {
@@ -242,7 +294,11 @@ export default function App() {
             </div>
 
             <div className="space-y-6">
-              {Object.keys(groupedProducts).length === 0 ? (
+              {isLoadingProducts ? (
+                <div className="flex items-center justify-center py-20">
+                  <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#2563EB] border-t-transparent"></div>
+                </div>
+              ) : Object.keys(groupedProducts).length === 0 ? (
                 <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-gray-200 bg-white p-12 text-center">
                   <div className="mb-4 rounded-full bg-gray-50 p-4">
                     <ShoppingBag size={48} className="text-gray-300" />
