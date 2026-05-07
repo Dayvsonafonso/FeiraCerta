@@ -1,29 +1,30 @@
 import React, { useState, useMemo, useEffect } from "react";
-import {
-  Plus,
-  Trash2,
-  AlertTriangle,
-  TrendingUp,
-  TrendingDown,
-  Search,
-  ChevronDown,
+import { 
+  Plus, 
+  Trash2, 
+  AlertTriangle, 
+  TrendingUp, 
+  TrendingDown, 
+  Search, 
+  ChevronDown, 
   ChevronUp,
   Sparkles,
   ShoppingBag,
   History,
   LayoutDashboard,
-  Filter
+  Filter,
+  Pencil
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip as RechartsTooltip,
+import { 
+  BarChart, 
+  Bar, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip as RechartsTooltip, 
   ResponsiveContainer,
-  Cell
+  Cell 
 } from "recharts";
 import { Product, getSavingInsights, AiInsight } from "./lib/gemini";
 import { cn, formatCurrency, calculateVariation } from "./lib/utils";
@@ -67,6 +68,7 @@ export default function App() {
   const [isLoadingAi, setIsLoadingAi] = useState(false);
   const [isLoadingProducts, setIsLoadingProducts] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [filterCategory, setFilterCategory] = useState("Todas");
   const [activeTab, setActiveTab] = useState<"dashboard" | "history" | "alerts">("dashboard");
 
@@ -113,6 +115,19 @@ export default function App() {
     setIsLoadingProducts(false);
   };
 
+  const handleEditClick = (product: Product) => {
+    setEditingId(product.id);
+    setFormData({
+      name: product.name,
+      category: product.category,
+      currentPrice: product.currentPrice.toLocaleString("pt-BR", { minimumFractionDigits: 2 }),
+      previousPrice: product.previousPrice.toLocaleString("pt-BR", { minimumFractionDigits: 2 }),
+      quantity: product.quantity.toString(),
+      description: product.description || ""
+    });
+    setShowForm(true);
+  };
+
   const handleAddProduct = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name || !formData.currentPrice) return;
@@ -120,24 +135,30 @@ export default function App() {
     const previousPrice = formData.previousPrice ? parseCurrencyToNumber(formData.previousPrice) : currentPrice;
     const quantity = Number(formData.quantity) || 1;
 
-    const { data, error } = await supabase
-      .from("products")
-      .insert([{
-        name: formData.name,
-        category: formData.category,
-        current_price: currentPrice,
-        previous_price: previousPrice,
-        quantity: quantity,
-        description: formData.description
-      }])
-      .select();
-    if (!error && data) {
+    const payload = {
+      name: formData.name,
+      category: formData.category,
+      current_price: currentPrice,
+      previous_price: previousPrice,
+      quantity: quantity,
+      description: formData.description
+    };
+
+    let result;
+    if (editingId) {
+      result = await supabase.from("products").update(payload).eq("id", editingId).select();
+    } else {
+      result = await supabase.from("products").insert([payload]).select();
+    }
+
+    if (!result.error) {
       fetchProducts();
       setFormData({ name: "", category: "🍎 Frutas", currentPrice: "", previousPrice: "", quantity: "", description: "" });
+      setEditingId(null);
       setShowForm(false);
     } else {
-      console.error("Supabase error:", error);
-      alert("Erro ao salvar! Verifique se você adicionou a coluna 'quantity' no Supabase.");
+      console.error("Supabase error:", result.error);
+      alert("Erro ao salvar!");
     }
   };
 
@@ -166,7 +187,7 @@ export default function App() {
     return { current, prev, diff, percent };
   }, [products]);
 
-  const filteredProducts = products.filter(p =>
+  const filteredProducts = products.filter(p => 
     filterCategory === "Todas" ? true : p.category === filterCategory
   );
 
@@ -200,24 +221,27 @@ export default function App() {
           </div>
         </div>
         <nav className="mt-8 space-y-2 px-4">
-          <button
+          <button 
             onClick={() => setActiveTab("dashboard")}
-            className={`flex w-full items-center gap-3 rounded-lg px-4 py-3 font-medium transition-all ${activeTab === "dashboard" ? "bg-blue-50 text-blue-700" : "text-gray-500 hover:bg-gray-50"
-              }`}
+            className={`flex w-full items-center gap-3 rounded-lg px-4 py-3 font-medium transition-all ${
+              activeTab === "dashboard" ? "bg-blue-50 text-blue-700" : "text-gray-500 hover:bg-gray-50"
+            }`}
           >
             <LayoutDashboard size={20} /> Dashboard
           </button>
-          <button
+          <button 
             onClick={() => setActiveTab("history")}
-            className={`flex w-full items-center gap-3 rounded-lg px-4 py-3 font-medium transition-all ${activeTab === "history" ? "bg-blue-50 text-blue-700" : "text-gray-500 hover:bg-gray-50"
-              }`}
+            className={`flex w-full items-center gap-3 rounded-lg px-4 py-3 font-medium transition-all ${
+              activeTab === "history" ? "bg-blue-50 text-blue-700" : "text-gray-500 hover:bg-gray-50"
+            }`}
           >
             <History size={20} /> Histórico
           </button>
-          <button
+          <button 
             onClick={() => setActiveTab("alerts")}
-            className={`flex w-full items-center gap-3 rounded-lg px-4 py-3 font-medium transition-all ${activeTab === "alerts" ? "bg-blue-50 text-blue-700" : "text-gray-500 hover:bg-gray-50"
-              }`}
+            className={`flex w-full items-center gap-3 rounded-lg px-4 py-3 font-medium transition-all ${
+              activeTab === "alerts" ? "bg-blue-50 text-blue-700" : "text-gray-500 hover:bg-gray-50"
+            }`}
           >
             <AlertTriangle size={20} /> Alertas
           </button>
@@ -233,8 +257,8 @@ export default function App() {
                 <h1 className="text-2xl font-bold">Controle de Gastos de Feira</h1>
                 <p className="text-gray-500 text-sm">Acompanhe a variação de preços de forma inteligente.</p>
               </div>
-              <button
-                onClick={() => setShowForm(true)}
+              <button 
+                onClick={() => { setEditingId(null); setFormData({ name: "", category: "🍎 Frutas", currentPrice: "", previousPrice: "", quantity: "", description: "" }); setShowForm(true); }}
                 className="inline-flex items-center justify-center gap-2 rounded-lg bg-[#2563EB] px-6 py-3 font-semibold text-white shadow-sm hover:bg-[#1D4ED8]"
               >
                 <Plus size={20} /> Adicionar Item
@@ -269,7 +293,7 @@ export default function App() {
               <div className="lg:col-span-2">
                 <div className="mb-6 flex items-center justify-between">
                   <h2 className="text-xl font-bold">Lista de Compras</h2>
-                  <select
+                  <select 
                     value={filterCategory}
                     onChange={(e) => setFilterCategory(e.target.value)}
                     className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm outline-none"
@@ -308,7 +332,7 @@ export default function App() {
                                   </div>
                                   <p className="text-xs text-gray-500">{item.description || "Sem descrição"}</p>
                                 </div>
-                                <div className="flex items-center gap-4 sm:gap-8">
+                                <div className="flex items-center gap-3 sm:gap-6">
                                   <div className="text-right hidden sm:block">
                                     <p className="text-[10px] text-gray-400 uppercase">Unitário</p>
                                     <p className="text-sm text-gray-500">{formatCurrency(unitPrice)}</p>
@@ -321,9 +345,14 @@ export default function App() {
                                     <p className="text-xs font-bold">{percent.toFixed(1)}%</p>
                                     <p className="text-[10px] font-medium">{diff > 0 ? "+" : ""}{formatCurrency(diff)}</p>
                                   </div>
-                                  <button onClick={() => removeProduct(item.id)} className="text-gray-300 hover:text-red-500 transition-colors">
-                                    <Trash2 size={18} />
-                                  </button>
+                                  <div className="flex items-center gap-2 border-l pl-3 ml-1">
+                                    <button onClick={() => handleEditClick(item)} className="text-gray-400 hover:text-blue-500 transition-colors">
+                                      <Pencil size={18} />
+                                    </button>
+                                    <button onClick={() => removeProduct(item.id)} className="text-gray-300 hover:text-red-500 transition-colors">
+                                      <Trash2 size={18} />
+                                    </button>
+                                  </div>
                                 </div>
                               </div>
                             );
@@ -345,7 +374,7 @@ export default function App() {
                   <p className="mb-6 text-sm text-blue-100 leading-relaxed">
                     Descubra como economizar analisando as variações da sua feira.
                   </p>
-                  <button
+                  <button 
                     onClick={analyzeWithAi}
                     disabled={isLoadingAi || products.length === 0}
                     className="w-full rounded-xl bg-white py-3 font-bold text-blue-600 hover:scale-[1.02] transition-transform disabled:opacity-50"
@@ -375,7 +404,7 @@ export default function App() {
                       <ResponsiveContainer width="100%" height="100%">
                         <BarChart data={chartData}>
                           <XAxis dataKey="name" hide />
-                          <RechartsTooltip
+                          <RechartsTooltip 
                             content={({ active, payload }) => {
                               if (active && payload?.length) return (
                                 <div className="bg-white p-2 shadow-xl border rounded-lg text-xs font-bold">
@@ -421,7 +450,7 @@ export default function App() {
                       <tr key={item.id} className="text-sm">
                         <td className="px-6 py-4 font-medium">{item.name}</td>
                         <td className="px-6 py-4 text-center text-gray-500 font-bold">{item.quantity}</td>
-                        <td className="px-6 py-4 text-right text-gray-400">{formatCurrency(item.currentPrice)}</td>
+                        <td className="px-6 py-4 text-right text-gray-400">{formatCurrency(item.previousPrice)}</td>
                         <td className="px-6 py-4 text-right font-bold">{formatCurrency(totalItem)}</td>
                       </tr>
                     );
@@ -493,7 +522,7 @@ export default function App() {
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowForm(false)} className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
             <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="relative w-full max-w-lg bg-white p-8 rounded-3xl shadow-2xl">
-              <h2 className="text-2xl font-bold mb-6">Novo Item</h2>
+              <h2 className="text-2xl font-bold mb-6">{editingId ? "Editar Item" : "Novo Item"}</h2>
               <form onSubmit={handleAddProduct} className="space-y-4">
                 <div>
                   <label className="text-sm font-bold text-gray-700 block mb-1">Nome</label>
@@ -521,9 +550,15 @@ export default function App() {
                     </select>
                   </div>
                 </div>
+                <div>
+                  <label className="text-sm font-bold text-gray-700 block mb-1">Observações (opcional)</label>
+                  <textarea value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} className="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl outline-none h-24 resize-none" placeholder="Ex: Estava mais caro no varejão" />
+                </div>
                 <div className="flex gap-3 pt-4">
                   <button type="button" onClick={() => setShowForm(false)} className="flex-1 py-3 font-bold text-gray-500 bg-gray-100 rounded-xl">Cancelar</button>
-                  <button type="submit" className="flex-1 py-3 font-bold text-white bg-blue-600 rounded-xl shadow-lg shadow-blue-100">Salvar</button>
+                  <button type="submit" className="flex-1 py-3 font-bold text-white bg-blue-600 rounded-xl shadow-lg shadow-blue-100">
+                    {editingId ? "Salvar Alterações" : "Salvar Item"}
+                  </button>
                 </div>
               </form>
             </motion.div>
