@@ -500,26 +500,32 @@ export default function App() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="mb-1.5 block text-sm font-semibold text-gray-700">Preço Atual (R$)</label>
-                    <input 
-                      type="number"
-                      step="0.01"
-                      required
-                      placeholder="0,00"
-                      value={formData.currentPrice}
-                      onChange={e => setFormData({ ...formData, currentPrice: e.target.value })}
-                      className="w-full rounded-xl border border-gray-300 bg-gray-50 px-4 py-3 outline-none transition-all focus:border-[#2563EB] focus:bg-white focus:ring-2 focus:ring-blue-100"
-                    />
+                    <div className="relative">
+                      <span className="absolute left-4 top-1/2 -translate-y-1/2 font-medium text-gray-500">R$</span>
+                      <input 
+                        type="number"
+                        step="0.01"
+                        required
+                        placeholder="0,00"
+                        value={formData.currentPrice}
+                        onChange={e => setFormData({ ...formData, currentPrice: e.target.value })}
+                        className="w-full rounded-xl border border-gray-300 bg-gray-50 pl-11 pr-4 py-3 outline-none transition-all focus:border-[#2563EB] focus:bg-white focus:ring-2 focus:ring-blue-100"
+                      />
+                    </div>
                   </div>
                   <div>
                     <label className="mb-1.5 block text-sm font-semibold text-gray-700">Preço Anterior (R$)</label>
-                    <input 
-                      type="number"
-                      step="0.01"
-                      placeholder="0,00"
-                      value={formData.previousPrice}
-                      onChange={e => setFormData({ ...formData, previousPrice: e.target.value })}
-                      className="w-full rounded-xl border border-gray-300 bg-gray-50 px-4 py-3 outline-none transition-all focus:border-[#2563EB] focus:bg-white focus:ring-2 focus:ring-blue-100"
-                    />
+                    <div className="relative">
+                      <span className="absolute left-4 top-1/2 -translate-y-1/2 font-medium text-gray-500">R$</span>
+                      <input 
+                        type="number"
+                        step="0.01"
+                        placeholder="0,00"
+                        value={formData.previousPrice}
+                        onChange={e => setFormData({ ...formData, previousPrice: e.target.value })}
+                        className="w-full rounded-xl border border-gray-300 bg-gray-50 pl-11 pr-4 py-3 outline-none transition-all focus:border-[#2563EB] focus:bg-white focus:ring-2 focus:ring-blue-100"
+                      />
+                    </div>
                   </div>
                 </div>
 
