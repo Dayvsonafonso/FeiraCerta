@@ -6,7 +6,8 @@ import {
   History,
   LayoutDashboard,
   Moon,
-  Sun
+  Sun,
+  LogOut
 } from "lucide-react";
 import { 
   BarChart, 
@@ -24,6 +25,7 @@ import { DashboardStats } from "./components/DashboardStats";
 import { AiCard } from "./components/AiCard";
 import { ProductList } from "./components/ProductList";
 import { ProductModal } from "./components/ProductModal";
+import { Auth } from "./components/Auth";
 
 const CATEGORIES = [
   "🥩 Carnes & Aves",
@@ -72,6 +74,21 @@ export default function App() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [filterCategory, setFilterCategory] = useState("Todas");
   const [activeTab, setActiveTab] = useState<"dashboard" | "history" | "alerts">("dashboard");
+  const [session, setSession] = useState<any>(null);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+    });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   useEffect(() => {
     if (isDarkMode) {
@@ -84,8 +101,12 @@ export default function App() {
   }, [isDarkMode]);
 
   useEffect(() => {
-    fetchProducts();
-  }, []);
+    if (session) {
+      fetchProducts();
+    } else {
+      setProducts([]);
+    }
+  }, [session]);
 
   const formatInputCurrency = (value: string) => {
     const digits = value.replace(/\D/g, "");
@@ -167,7 +188,8 @@ export default function App() {
       current_price: currentPrice,
       previous_price: previousPrice,
       quantity: quantity,
-      description: formData.description
+      description: formData.description,
+      user_id: session?.user?.id
     };
 
     let result;
@@ -235,6 +257,10 @@ export default function App() {
     }).filter(d => d.total > 0);
   }, [currentMonthProducts]);
 
+  if (!session) {
+    return <Auth />;
+  }
+
   return (
     <div className="min-h-screen bg-[#F9FAFB] dark:bg-[#0F172A] text-[#111827] dark:text-gray-100 font-sans pb-24 lg:pb-0 transition-colors duration-200">
       {/* Sidebar - Desktop */}
@@ -268,13 +294,20 @@ export default function App() {
             <AlertTriangle size={20} /> Alertas
           </button>
         </nav>
-        <div className="p-4 border-t border-gray-200 dark:border-gray-800">
+        <div className="p-4 border-t border-gray-200 dark:border-gray-800 space-y-2">
           <button 
             onClick={() => setIsDarkMode(!isDarkMode)} 
             className="flex w-full items-center justify-center gap-3 rounded-lg px-4 py-3 font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
           >
             {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
             <span>{isDarkMode ? "Modo Claro" : "Modo Escuro"}</span>
+          </button>
+          <button 
+            onClick={() => supabase.auth.signOut()} 
+            className="flex w-full items-center justify-center gap-3 rounded-lg px-4 py-3 font-medium text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+          >
+            <LogOut size={20} />
+            <span>Sair</span>
           </button>
         </div>
       </aside>
@@ -447,6 +480,9 @@ export default function App() {
         </button>
         <button onClick={() => setActiveTab("alerts")} className={`flex flex-col items-center gap-1 ${activeTab === "alerts" ? "text-blue-600 dark:text-blue-400" : "text-gray-400 dark:text-gray-500"}`}>
           <AlertTriangle size={24} /> <span className="text-[10px] font-bold">Alertas</span>
+        </button>
+        <button onClick={() => supabase.auth.signOut()} className="flex flex-col items-center gap-1 text-red-400 dark:text-red-500">
+          <LogOut size={24} /> <span className="text-[10px] font-bold">Sair</span>
         </button>
       </nav>
 
