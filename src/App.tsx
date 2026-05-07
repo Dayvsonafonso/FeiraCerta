@@ -40,6 +40,7 @@ export default function App() {
     category: "Frutas",
     currentPrice: "",
     previousPrice: "",
+    quantity: "1",
     description: ""
   });
   const [aiInsights, setAiInsights] = useState<AiInsight | null>(null);
@@ -84,6 +85,7 @@ export default function App() {
         category: p.category,
         currentPrice: Number(p.current_price),
         previousPrice: Number(p.previous_price),
+        quantity: Number(p.quantity || 1),
         description: p.description
       }));
       setProducts(mapped);
@@ -96,6 +98,8 @@ export default function App() {
     if (!formData.name || !formData.currentPrice) return;
     const currentPrice = parseCurrencyToNumber(formData.currentPrice);
     const previousPrice = formData.previousPrice ? parseCurrencyToNumber(formData.previousPrice) : currentPrice;
+    const quantity = Number(formData.quantity) || 1;
+
     const { data, error } = await supabase
       .from("products")
       .insert([{
@@ -103,13 +107,17 @@ export default function App() {
         category: formData.category,
         current_price: currentPrice,
         previous_price: previousPrice,
+        quantity: quantity,
         description: formData.description
       }])
       .select();
     if (!error && data) {
       fetchProducts();
-      setFormData({ name: "", category: "Frutas", currentPrice: "", previousPrice: "", description: "" });
+      setFormData({ name: "", category: "Frutas", currentPrice: "", previousPrice: "", quantity: "1", description: "" });
       setShowForm(false);
+    } else {
+      console.error("Supabase error:", error);
+      alert("Erro ao salvar! Verifique se você adicionou a coluna 'quantity' no Supabase.");
     }
   };
 
@@ -132,8 +140,8 @@ export default function App() {
   };
 
   const totals = useMemo(() => {
-    const current = products.reduce((sum, p) => sum + p.currentPrice, 0);
-    const prev = products.reduce((sum, p) => sum + p.previousPrice, 0);
+    const current = products.reduce((sum, p) => sum + (p.currentPrice * p.quantity), 0);
+    const prev = products.reduce((sum, p) => sum + (p.previousPrice * p.quantity), 0);
     const { diff, percent } = calculateVariation(current, prev);
     return { current, prev, diff, percent };
   }, [products]);
@@ -154,7 +162,7 @@ export default function App() {
     return CATEGORIES.map(cat => {
       const current = products
         .filter(p => p.category === cat)
-        .reduce((sum, p) => sum + p.currentPrice, 0);
+        .reduce((sum, p) => sum + (p.currentPrice * p.quantity), 0);
       return { name: cat, total: current };
     }).filter(d => d.total > 0);
   }, [products]);
@@ -269,21 +277,28 @@ export default function App() {
                         </div>
                         <div className="divide-y divide-gray-100">
                           {items.map(item => {
+                            const unitPrice = item.currentPrice;
+                            const totalItem = unitPrice * item.quantity;
                             const { diff, percent } = calculateVariation(item.currentPrice, item.previousPrice);
                             return (
                               <div key={item.id} className="flex items-center justify-between p-4 hover:bg-gray-50 transition-colors">
                                 <div className="flex-1">
-                                  <h4 className="font-semibold text-gray-900">{item.name}</h4>
+                                  <div className="flex items-center gap-2">
+                                    <h4 className="font-semibold text-gray-900">{item.name}</h4>
+                                    <span className="rounded bg-gray-100 px-1.5 py-0.5 text-[10px] font-bold text-gray-600">
+                                      x{item.quantity}
+                                    </span>
+                                  </div>
                                   <p className="text-xs text-gray-500">{item.description || "Sem descrição"}</p>
                                 </div>
                                 <div className="flex items-center gap-4 sm:gap-8">
                                   <div className="text-right hidden sm:block">
-                                    <p className="text-[10px] text-gray-400 uppercase">Anterior</p>
-                                    <p className="text-sm text-gray-400 line-through">{formatCurrency(item.previousPrice)}</p>
+                                    <p className="text-[10px] text-gray-400 uppercase">Unitário</p>
+                                    <p className="text-sm text-gray-500">{formatCurrency(unitPrice)}</p>
                                   </div>
                                   <div className="text-right">
-                                    <p className="text-[10px] text-gray-400 uppercase">Atual</p>
-                                    <p className="text-sm font-bold">{formatCurrency(item.currentPrice)}</p>
+                                    <p className="text-[10px] text-gray-400 uppercase">Subtotal</p>
+                                    <p className="text-sm font-bold">{formatCurrency(totalItem)}</p>
                                   </div>
                                   <div className={`text-right min-w-[60px] ${diff > 0 ? "text-red-600" : "text-green-600"}`}>
                                     <p className="text-xs font-bold">{percent.toFixed(1)}%</p>
@@ -377,22 +392,20 @@ export default function App() {
                 <thead className="bg-gray-50 border-b border-gray-200 text-xs uppercase text-gray-500 font-bold">
                   <tr>
                     <th className="px-6 py-4">Produto</th>
-                    <th className="px-6 py-4 text-right">Anterior</th>
-                    <th className="px-6 py-4 text-right">Atual</th>
-                    <th className="px-6 py-4 text-right">Var. %</th>
+                    <th className="px-6 py-4 text-center">Qtd</th>
+                    <th className="px-6 py-4 text-right">Unitário</th>
+                    <th className="px-6 py-4 text-right">Subtotal</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
                   {products.map(item => {
-                    const { percent } = calculateVariation(item.currentPrice, item.previousPrice);
+                    const totalItem = item.currentPrice * item.quantity;
                     return (
                       <tr key={item.id} className="text-sm">
                         <td className="px-6 py-4 font-medium">{item.name}</td>
-                        <td className="px-6 py-4 text-right text-gray-400">{formatCurrency(item.previousPrice)}</td>
-                        <td className="px-6 py-4 text-right font-bold">{formatCurrency(item.currentPrice)}</td>
-                        <td className={`px-6 py-4 text-right font-bold ${percent > 0 ? "text-red-600" : "text-green-600"}`}>
-                          {percent.toFixed(1)}%
-                        </td>
+                        <td className="px-6 py-4 text-center text-gray-500 font-bold">{item.quantity}</td>
+                        <td className="px-6 py-4 text-right text-gray-400">{formatCurrency(item.currentPrice)}</td>
+                        <td className="px-6 py-4 text-right font-bold">{formatCurrency(totalItem)}</td>
                       </tr>
                     );
                   })}
@@ -431,7 +444,7 @@ export default function App() {
                           </div>
                           <div>
                             <h3 className="font-bold text-gray-900">{item.name}</h3>
-                            <p className="text-sm text-red-600 font-medium">Subiu {formatCurrency(diff)}</p>
+                            <p className="text-sm text-red-600 font-medium">Unitário subiu {formatCurrency(diff)}</p>
                           </div>
                         </div>
                         <div className="text-2xl font-black text-red-600">+{percent.toFixed(1)}%</div>
@@ -471,19 +484,25 @@ export default function App() {
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="text-sm font-bold text-gray-700 block mb-1">Preço Atual</label>
+                    <label className="text-sm font-bold text-gray-700 block mb-1">Preço Unitário Atual</label>
                     <input required value={formData.currentPrice} onChange={e => setFormData({ ...formData, currentPrice: formatInputCurrency(e.target.value) })} className="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl outline-none" />
                   </div>
                   <div>
-                    <label className="text-sm font-bold text-gray-700 block mb-1">Preço Anterior</label>
+                    <label className="text-sm font-bold text-gray-700 block mb-1">Preço Unitário Anterior</label>
                     <input value={formData.previousPrice} onChange={e => setFormData({ ...formData, previousPrice: formatInputCurrency(e.target.value) })} className="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl outline-none" />
                   </div>
                 </div>
-                <div>
-                  <label className="text-sm font-bold text-gray-700 block mb-1">Categoria</label>
-                  <select value={formData.category} onChange={e => setFormData({ ...formData, category: e.target.value })} className="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl outline-none">
-                    {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
-                  </select>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-bold text-gray-700 block mb-1">Quantidade</label>
+                    <input type="number" min="1" step="any" required value={formData.quantity} onChange={e => setFormData({ ...formData, quantity: e.target.value })} className="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl outline-none focus:ring-2 focus:ring-blue-100" />
+                  </div>
+                  <div>
+                    <label className="text-sm font-bold text-gray-700 block mb-1">Categoria</label>
+                    <select value={formData.category} onChange={e => setFormData({ ...formData, category: e.target.value })} className="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl outline-none">
+                      {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                    </select>
+                  </div>
                 </div>
                 <div className="flex gap-3 pt-4">
                   <button type="button" onClick={() => setShowForm(false)} className="flex-1 py-3 font-bold text-gray-500 bg-gray-100 rounded-xl">Cancelar</button>

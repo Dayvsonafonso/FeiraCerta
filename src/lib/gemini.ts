@@ -8,6 +8,7 @@ export interface Product {
   category: string;
   currentPrice: number;
   previousPrice: number;
+  quantity: number;
   description?: string;
 }
 
