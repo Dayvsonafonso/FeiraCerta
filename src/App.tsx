@@ -316,9 +316,12 @@ export default function App() {
                       const categoryTotal = items.reduce((sum, p) => sum + (p.currentPrice * p.quantity), 0);
                       return (
                         <div key={category} className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
-                          <div className="bg-gray-50 px-4 py-2 border-b border-gray-200 flex items-center justify-between">
+                          <div className="bg-gray-50/80 px-4 py-2.5 border-b border-gray-200 flex items-center justify-between w-full">
                             <span className="font-bold text-blue-600 text-sm">{category}</span>
-                            <span className="text-sm font-black text-gray-700">Total: {formatCurrency(categoryTotal)}</span>
+                            <div className="flex items-center gap-2">
+                              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-tight">Total do Setor:</span>
+                              <span className="text-sm font-black text-gray-800">{formatCurrency(categoryTotal)}</span>
+                            </div>
                           </div>
                           <div className="divide-y divide-gray-100">
                           {items.map(item => {
