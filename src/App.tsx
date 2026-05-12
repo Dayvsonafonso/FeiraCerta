@@ -9,7 +9,10 @@ import {
   Sun,
   LogOut,
   ChevronRight,
-  Copy
+  Copy,
+  Search,
+  Printer,
+  Calendar as CalendarIcon
 } from "lucide-react";
 import { 
   BarChart, 
@@ -91,6 +94,7 @@ export default function App() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [filterCategory, setFilterCategory] = useState("Todas");
   const [activeTab, setActiveTab] = useState<"dashboard" | "history" | "alerts">("dashboard");
+  const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
     if (isDarkMode) {
@@ -198,6 +202,15 @@ export default function App() {
       .reduce((sum, p) => sum + (p.currentPrice * p.quantity), 0);
     return { name: cat, total: current };
   }).filter(d => d.total > 0);
+
+  const filteredHistory = products.filter(p => 
+    p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    p.category.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const handlePrint = () => {
+    window.print();
+  };
 
   return (
     <div className="min-h-screen flex bg-background text-foreground transition-colors duration-300">
@@ -361,28 +374,58 @@ export default function App() {
             )}
 
             {activeTab === "history" && (
-              <div className="glass dark:glass rounded-3xl overflow-hidden border border-border shadow-sm">
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left min-w-[600px]">
-                    <thead className="bg-slate-50 dark:bg-slate-900/50 border-b border-border">
-                      <tr>
-                        <th className="px-8 py-5 text-xs font-black uppercase tracking-widest text-slate-400">Produto</th>
-                        <th className="px-8 py-5 text-xs font-black uppercase tracking-widest text-slate-400 text-center">Qtd</th>
-                        <th className="px-8 py-5 text-xs font-black uppercase tracking-widest text-slate-400 text-right">Unitário</th>
-                        <th className="px-8 py-5 text-xs font-black uppercase tracking-widest text-slate-400 text-right">Total</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-border">
-                      {products.map(item => (
-                        <tr key={item.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors group">
-                          <td className="px-8 py-5 font-bold">{item.name}</td>
-                          <td className="px-8 py-5 text-center text-slate-500 font-medium">{item.quantity}</td>
-                          <td className="px-8 py-5 text-right text-slate-400">{formatCurrency(item.currentPrice)}</td>
-                          <td className="px-8 py-5 text-right font-black text-brand-primary">{formatCurrency(item.currentPrice * item.quantity)}</td>
+              <div className="space-y-6">
+                <div className="flex flex-col sm:flex-row gap-4 items-center justify-between no-print">
+                  <div className="relative w-full sm:max-w-md group">
+                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-brand-primary transition-colors">
+                      <Search size={18} />
+                    </div>
+                    <input 
+                      type="text"
+                      placeholder="Buscar no histórico..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="w-full bg-card border border-border text-foreground pl-12 pr-4 py-3.5 rounded-2xl outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary transition-all font-medium"
+                    />
+                  </div>
+                  <motion.button 
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={handlePrint}
+                    className="flex items-center justify-center gap-3 rounded-2xl bg-white dark:bg-slate-900 border border-border px-8 py-4 font-bold text-foreground shadow-sm hover:border-brand-primary/50 transition-all w-full sm:w-auto"
+                  >
+                    <Printer size={20} className="text-brand-primary" />
+                    Imprimir Relatório
+                  </motion.button>
+                </div>
+
+                <div className="glass dark:glass rounded-3xl overflow-hidden border border-border shadow-sm print-area">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left min-w-[600px]">
+                      <thead className="bg-slate-50 dark:bg-slate-900/50 border-b border-border">
+                        <tr>
+                          <th className="px-8 py-5 text-xs font-black uppercase tracking-widest text-slate-400">Data</th>
+                          <th className="px-8 py-5 text-xs font-black uppercase tracking-widest text-slate-400">Produto</th>
+                          <th className="px-8 py-5 text-xs font-black uppercase tracking-widest text-slate-400 text-center">Qtd</th>
+                          <th className="px-8 py-5 text-xs font-black uppercase tracking-widest text-slate-400 text-right">Unitário</th>
+                          <th className="px-8 py-5 text-xs font-black uppercase tracking-widest text-slate-400 text-right">Total</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody className="divide-y divide-border">
+                        {filteredHistory.map(item => (
+                          <tr key={item.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors group">
+                            <td className="px-8 py-5 font-medium text-slate-500 whitespace-nowrap">
+                              {new Date(item.createdAt).toLocaleDateString('pt-BR')}
+                            </td>
+                            <td className="px-8 py-5 font-bold">{item.name}</td>
+                            <td className="px-8 py-5 text-center text-slate-500 font-medium">{item.quantity}</td>
+                            <td className="px-8 py-5 text-right text-slate-400">{formatCurrency(item.currentPrice)}</td>
+                            <td className="px-8 py-5 text-right font-black text-brand-primary">{formatCurrency(item.currentPrice * item.quantity)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               </div>
             )}
