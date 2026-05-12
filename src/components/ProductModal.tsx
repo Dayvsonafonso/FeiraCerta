@@ -78,36 +78,6 @@ export function ProductModal({
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Preço Atual</label>
-                  <div className="relative group">
-                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-brand-primary transition-colors">
-                      <DollarSign size={18} />
-                    </div>
-                    <input 
-                      required 
-                      value={formData.currentPrice} 
-                      onChange={e => setFormData({ ...formData, currentPrice: formatInputCurrency(e.target.value) })} 
-                      className="w-full bg-slate-50 dark:bg-slate-900/50 border border-border text-foreground pl-12 pr-4 py-3.5 rounded-2xl outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary transition-all font-bold" 
-                    />
-                  </div>
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Preço Anterior</label>
-                  <div className="relative group">
-                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-brand-primary transition-colors">
-                      <DollarSign size={18} />
-                    </div>
-                    <input 
-                      value={formData.previousPrice} 
-                      onChange={e => setFormData({ ...formData, previousPrice: formatInputCurrency(e.target.value) })} 
-                      className="w-full bg-slate-50 dark:bg-slate-900/50 border border-border text-foreground pl-12 pr-4 py-3.5 rounded-2xl outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary transition-all font-bold opacity-70 focus:opacity-100" 
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                <div className="space-y-1.5">
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Quantidade</label>
                   <div className="relative group">
                     <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-brand-primary transition-colors">
@@ -137,6 +107,36 @@ export function ProductModal({
                     >
                       {categories.map(c => <option key={c} value={c}>{c}</option>)}
                     </select>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Preço Atual</label>
+                  <div className="relative group">
+                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-brand-primary transition-colors">
+                      <DollarSign size={18} />
+                    </div>
+                    <input 
+                      required 
+                      value={formData.currentPrice} 
+                      onChange={e => setFormData({ ...formData, currentPrice: formatInputCurrency(e.target.value) })} 
+                      className="w-full bg-slate-50 dark:bg-slate-900/50 border border-border text-foreground pl-12 pr-4 py-3.5 rounded-2xl outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary transition-all font-bold" 
+                    />
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Preço Anterior</label>
+                  <div className="relative group">
+                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-brand-primary transition-colors">
+                      <DollarSign size={18} />
+                    </div>
+                    <input 
+                      value={formData.previousPrice} 
+                      onChange={e => setFormData({ ...formData, previousPrice: formatInputCurrency(e.target.value) })} 
+                      className="w-full bg-slate-50 dark:bg-slate-900/50 border border-border text-foreground pl-12 pr-4 py-3.5 rounded-2xl outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary transition-all font-bold opacity-70 focus:opacity-100" 
+                    />
                   </div>
                 </div>
               </div>
