@@ -273,6 +273,15 @@ export default function App() {
     setSelectedMonth("");
   };
 
+  const alerts = currentMonthProducts.filter(p => {
+    if (p.previousPrice <= 0) return false;
+    const increase = ((p.currentPrice - p.previousPrice) / p.previousPrice) * 100;
+    return increase >= 15; // Alert if price increased more than 15%
+  }).map(p => ({
+    ...p,
+    percent: ((p.currentPrice - p.previousPrice) / p.previousPrice) * 100
+  }));
+
   const handlePrint = () => {
     window.print();
   };
@@ -604,40 +613,70 @@ export default function App() {
             )}
 
             {activeTab === "alerts" && (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {products.filter(p => p.currentPrice > p.previousPrice).length === 0 ? (
-                  <div className="col-span-full py-24 text-center border-2 border-dashed border-border rounded-[2.5rem]">
-                    <div className="h-16 w-16 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4">
-                       <AlertTriangle className="text-slate-300" size={32} />
+              <div className="space-y-6">
+                <div className="flex items-center justify-between mb-2">
+                   <div>
+                      <h2 className="text-2xl font-black tracking-tight flex items-center gap-3">
+                        <AlertTriangle className="text-amber-500" size={24} />
+                        Alertas de Preço
+                      </h2>
+                      <p className="text-slate-400 text-sm font-medium">Itens que sofreram aumento significativo (&gt;15%).</p>
+                   </div>
+                </div>
+
+                {alerts.length === 0 ? (
+                  <motion.div 
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="py-24 text-center border-2 border-dashed border-border rounded-[2.5rem] flex flex-col items-center gap-4"
+                  >
+                    <div className="h-20 w-20 bg-emerald-500/10 rounded-full flex items-center justify-center">
+                       <Sun className="text-emerald-500" size={32} />
                     </div>
-                    <p className="text-slate-400 font-semibold text-lg">Nenhum alerta detectado</p>
-                  </div>
+                    <div>
+                       <p className="text-emerald-600 dark:text-emerald-400 font-bold text-lg italic">"Nenhuma inflação detectada na sua lista!"</p>
+                       <p className="text-slate-300 text-xs font-black uppercase tracking-widest mt-1">Seus preços estão estáveis ou baixando.</p>
+                    </div>
+                  </motion.div>
                 ) : (
-                  products
-                    .filter(p => p.currentPrice > p.previousPrice)
-                    .map(item => {
-                      const diff = item.currentPrice - item.previousPrice;
-                      const percent = (diff / item.previousPrice) * 100;
-                      return (
-                        <motion.div 
-                          key={item.id} 
-                          whileHover={{ y: -5 }}
-                          className="bg-red-50/30 dark:bg-red-900/10 border border-red-100 dark:border-red-900/20 p-8 rounded-[2rem] relative overflow-hidden"
-                        >
-                          <div className="absolute top-0 right-0 p-4 opacity-10">
-                             <AlertTriangle size={80} className="text-red-600" />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {alerts.map((alert, i) => (
+                      <motion.div 
+                        key={alert.id}
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: i * 0.1 }}
+                        className="glass dark:glass rounded-[2rem] p-6 border border-amber-500/20 shadow-sm relative overflow-hidden group"
+                      >
+                        <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                           <TrendingUp size={64} className="text-amber-500" />
+                        </div>
+                        
+                        <div className="flex items-start justify-between mb-4">
+                          <div className="bg-amber-500/10 p-3 rounded-2xl">
+                             <AlertTriangle className="text-amber-500" size={20} />
                           </div>
-                          <h4 className="font-bold text-xl mb-1">{item.name}</h4>
-                          <p className="text-red-600 dark:text-red-400 font-bold text-sm mb-6">Subiu {formatCurrency(diff)}</p>
-                          <div className="flex items-end justify-between">
-                            <div>
-                               <p className="text-[10px] uppercase font-black text-slate-400 mb-1">Variação</p>
-                               <p className="text-3xl font-black text-red-600 dark:text-red-400">+{percent.toFixed(1)}%</p>
-                            </div>
+                          <span className="bg-amber-500 text-white text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest shadow-lg shadow-amber-500/20">
+                             +{alert.percent.toFixed(0)}% de Alta
+                          </span>
+                        </div>
+
+                        <div className="relative z-10">
+                          <h4 className="text-xl font-black text-foreground mb-1">{alert.name}</h4>
+                          <p className="text-xs text-slate-400 font-medium mb-6">
+                            O preço subiu de <span className="font-bold text-slate-500">{formatCurrency(alert.previousPrice)}</span> para <span className="font-bold text-amber-600">{formatCurrency(alert.currentPrice)}</span>.
+                          </p>
+
+                          <div className="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-2xl border border-border flex gap-3 items-start">
+                             <Info size={16} className="text-brand-primary mt-0.5 shrink-0" />
+                             <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed italic">
+                               Considere substituir por uma marca similar ou verificar se há promoções em outros setores. Esse aumento impacta seu total em <span className="font-bold text-foreground">{formatCurrency((alert.currentPrice - alert.previousPrice) * alert.quantity)}</span> neste mês.
+                             </p>
                           </div>
-                        </motion.div>
-                      );
-                    })
+                        </div>
+                      </motion.div>
+                    ))}
+                  </div>
                 )}
               </div>
             )}
