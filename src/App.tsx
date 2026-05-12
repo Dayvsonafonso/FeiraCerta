@@ -691,11 +691,24 @@ export default function App() {
           { id: "dashboard", icon: LayoutDashboard, label: "Início" },
           { id: "history", icon: History, label: "Histórico" },
           { id: "alerts", icon: AlertTriangle, label: "Alertas" },
+          { id: "logout", icon: LogOut, label: "Sair" },
         ].map((item) => (
           <button 
             key={item.id}
-            onClick={() => setActiveTab(item.id as any)} 
-            className={`flex flex-col items-center gap-1.5 transition-all ${activeTab === item.id ? "text-brand-primary scale-110" : "text-slate-400"}`}
+            onClick={() => {
+              if (item.id === "logout") {
+                signOut();
+              } else {
+                setActiveTab(item.id as any);
+              }
+            }} 
+            className={`flex flex-col items-center gap-1.5 transition-all ${
+              item.id === "logout" 
+                ? "text-red-400 hover:text-red-500" 
+                : activeTab === item.id 
+                  ? "text-brand-primary scale-110" 
+                  : "text-slate-400"
+            }`}
           >
             <item.icon size={22} strokeWidth={activeTab === item.id ? 2.5 : 2} />
             <span className="text-[10px] font-bold">{item.label}</span>
