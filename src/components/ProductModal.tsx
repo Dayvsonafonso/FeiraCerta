@@ -21,7 +21,10 @@ export const PREMIUM_CATEGORIES = [
   "👶 Bebê & Infantil",
   "🐾 Pet",
   "💊 Farmácia & Saúde",
-  "🍬 Doces & Sobremesas"
+  "🍬 Doces & Sobremesas",
+  "🧴 Higiene Pessoal",
+  "🧹 Limpeza & Químicos",
+  "🧃 Bebidas / Prontas"
 ];
 
 export function ProductModal({
