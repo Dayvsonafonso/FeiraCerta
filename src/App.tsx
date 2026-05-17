@@ -815,6 +815,7 @@ export default function App() {
         handleNameChange={handleNameChange}
         categories={CATEGORIES}
         formatInputCurrency={formatInputCurrency}
+        isPremium={profile?.subscription_status === 'active'}
       />
     </div>
   );

@@ -11,8 +11,19 @@ interface ProductModalProps {
   handleAddProduct: (e: React.FormEvent) => void;
   handleNameChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   categories: string[];
+  categories: string[];
   formatInputCurrency: (val: string) => string;
+  isPremium?: boolean;
 }
+
+export const PREMIUM_CATEGORIES = [
+  "🥩 Carnes & Aves",
+  "🐟 Peixes & Frutos do Mar",
+  "👶 Bebê & Infantil",
+  "🐾 Pet",
+  "💊 Farmácia & Saúde",
+  "🍬 Doces & Sobremesas"
+];
 
 export function ProductModal({
   showForm,
@@ -23,7 +34,8 @@ export function ProductModal({
   handleAddProduct,
   handleNameChange,
   categories,
-  formatInputCurrency
+  formatInputCurrency,
+  isPremium = false
 }: ProductModalProps) {
   return (
     <AnimatePresence>
@@ -105,7 +117,14 @@ export function ProductModal({
                       onChange={e => setFormData({ ...formData, category: e.target.value })} 
                       className="w-full bg-slate-50 dark:bg-slate-900/50 border border-border text-foreground pl-12 pr-4 py-3.5 rounded-2xl outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary transition-all font-bold appearance-none"
                     >
-                      {categories.map(c => <option key={c} value={c}>{c}</option>)}
+                      {categories.map(c => {
+                        const isLocked = !isPremium && PREMIUM_CATEGORIES.includes(c);
+                        return (
+                          <option key={c} value={c} disabled={isLocked} className={isLocked ? "text-amber-600 dark:text-amber-500 font-bold" : ""}>
+                            {isLocked ? `👑 ${c} (Premium)` : c}
+                          </option>
+                        );
+                      })}
                     </select>
                   </div>
                 </div>
