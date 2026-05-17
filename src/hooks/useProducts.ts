@@ -1,6 +1,16 @@
 import { useState, useEffect, useMemo } from "react";
 import { supabase } from "../lib/supabase";
 import { Product } from "../lib/gemini";
+import { z } from "zod";
+
+const productSchema = z.object({
+  name: z.string().min(1, "Nome obrigatório").max(200, "Nome muito longo"),
+  category: z.string().min(1, "Categoria obrigatória"),
+  current_price: z.number().min(0, "Preço não pode ser negativo").max(999999, "Preço inválido"),
+  previous_price: z.number().min(0, "Preço não pode ser negativo").max(999999, "Preço inválido"),
+  quantity: z.number().min(0.01, "Quantidade mínima: 0.01").max(9999, "Quantidade inválida"),
+  description: z.string().max(500, "Descrição muito longa").optional().default(""),
+});
 
 export function useProducts(userId: string | undefined) {
   const [products, setProducts] = useState<Product[]>(() => {
@@ -56,14 +66,26 @@ export function useProducts(userId: string | undefined) {
 
   const addProduct = async (payload: any) => {
     if (!userId) return { error: new Error("User not authenticated") };
-    const { data, error } = await supabase.from("products").insert([{ ...payload, user_id: userId }]).select();
+    
+    const validation = productSchema.safeParse(payload);
+    if (!validation.success) {
+      return { error: new Error(validation.error.errors[0]?.message || "Dados inválidos") };
+    }
+    
+    const { data, error } = await supabase.from("products").insert([{ ...validation.data, user_id: userId }]).select();
     if (!error) await fetchProducts();
     return { data, error };
   };
 
   const updateProduct = async (id: string, payload: any) => {
     if (!userId) return { error: new Error("User not authenticated") };
-    const { data, error } = await supabase.from("products").update(payload).eq("id", id).eq("user_id", userId).select();
+    
+    const validation = productSchema.partial().safeParse(payload);
+    if (!validation.success) {
+      return { error: new Error(validation.error.errors[0]?.message || "Dados inválidos") };
+    }
+    
+    const { data, error } = await supabase.from("products").update(validation.data).eq("id", id).eq("user_id", userId).select();
     if (!error) await fetchProducts();
     return { data, error };
   };

@@ -10,13 +10,22 @@ interface AiCardProps {
 export function AiCard({ products }: AiCardProps) {
   const [aiInsights, setAiInsights] = useState<AiInsight | null>(null);
   const [isLoadingAi, setIsLoadingAi] = useState(false);
+  const [cooldown, setCooldown] = useState(0);
+
+  // Cooldown timer
+  React.useEffect(() => {
+    if (cooldown <= 0) return;
+    const timer = setTimeout(() => setCooldown(c => c - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [cooldown]);
 
   const analyzeWithAi = async () => {
-    if (products.length === 0) return;
+    if (products.length === 0 || cooldown > 0) return;
     setIsLoadingAi(true);
     try {
       const insights = await getSavingInsights(products);
       setAiInsights(insights);
+      setCooldown(30); // 30 second cooldown between requests
     } catch (err) {
       console.error(err);
     } finally {
@@ -53,12 +62,14 @@ export function AiCard({ products }: AiCardProps) {
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
           onClick={analyzeWithAi}
-          disabled={isLoadingAi || products.length === 0}
+          disabled={isLoadingAi || products.length === 0 || cooldown > 0}
           className="group relative w-full overflow-hidden rounded-2xl bg-white p-4 font-black text-brand-primary shadow-xl transition-all disabled:opacity-50"
         >
           <div className="relative z-10 flex items-center justify-center gap-2">
             {isLoadingAi ? (
               <div className="h-5 w-5 border-2 border-brand-primary/20 border-t-brand-primary rounded-full animate-spin"></div>
+            ) : cooldown > 0 ? (
+              <span className="text-slate-400">Disponível em {cooldown}s</span>
             ) : (
               <>
                 <BrainCircuit size={18} />

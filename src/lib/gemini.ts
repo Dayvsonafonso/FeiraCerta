@@ -1,6 +1,4 @@
-import { GoogleGenAI } from "@google/genai";
-
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
+import { supabase } from "./supabase";
 
 export interface Product {
   id: string;
@@ -19,46 +17,26 @@ export interface AiInsight {
   alerts: string[];
 }
 
+/**
+ * Chama a Edge Function no backend para gerar insights com IA.
+ * A chave da API Gemini fica protegida no servidor — nunca exposta ao browser.
+ */
 export async function getSavingInsights(products: Product[]): Promise<AiInsight | null> {
   if (products.length === 0) return null;
 
-  const prompt = `
-    Como um assistente especialista em economia doméstica e feira, analise a seguinte lista de produtos:
-    ${JSON.stringify(products.map(p => ({
-      name: p.name,
-      current: p.currentPrice,
-      prev: p.previousPrice,
-      desc: p.description
-    })))}
-
-    Por favor:
-    1. Identifique os 3 produtos com maior alta percentual.
-    2. Para esses itens, sugira substituições mais baratas (ex: trocar marca, trocar por fruta da estação, etc).
-    3. Dê uma dica geral de como economizar pelo menos 10% no total desta compra.
-    4. Destaque alertas de preço abusivo se houver.
-
-    Responda em JSON no seguinte formato:
-    {
-      "topIncreases": [{"name": string, "percent": number, "suggestion": string}],
-      "generalTip": string,
-      "alerts": string[]
-    }
-    Responda APENAS o JSON.
-  `;
-
   try {
-    const response = await ai.models.generateContent({
-      model: "gemini-3-flash-preview",
-      contents: prompt,
-      config: {
-        responseMimeType: "application/json"
-      }
+    const { data, error } = await supabase.functions.invoke("ai-insights", {
+      body: { products },
     });
 
-    const text = response.text || "{}";
-    return JSON.parse(text);
+    if (error) {
+      console.error("Edge Function Error:", error);
+      return null;
+    }
+
+    return data as AiInsight;
   } catch (error) {
-    console.error("Gemini API Error:", error);
+    console.error("AI Insights Error:", error);
     return null;
   }
 }

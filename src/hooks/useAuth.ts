@@ -15,7 +15,12 @@ export function useAuth() {
   const [loading, setLoading] = useState(true);
 
   const fetchProfile = async (userId: string) => {
-    const { data } = await supabase.from('profiles').select('*').eq('id', userId).single();
+    // Only select the fields we actually need — never use select('*')
+    const { data } = await supabase
+      .from('profiles')
+      .select('id, email, subscription_status, plan_name')
+      .eq('id', userId)
+      .single();
     if (data) setProfile(data);
   };
 
@@ -38,7 +43,20 @@ export function useAuth() {
     return () => subscription.unsubscribe();
   }, []);
 
-  const signOut = () => supabase.auth.signOut();
+  const signOut = async () => {
+    // Clear all product caches from localStorage before signing out
+    const keysToRemove: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key?.startsWith('products_cache_')) {
+        keysToRemove.push(key);
+      }
+    }
+    keysToRemove.forEach(key => localStorage.removeItem(key));
+
+    setProfile(null);
+    await supabase.auth.signOut();
+  };
 
   return { session, profile, loading, signOut };
 }
