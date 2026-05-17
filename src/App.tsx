@@ -15,7 +15,10 @@ import {
   Calendar as CalendarIcon,
   FilterX,
   Clock,
-  ArrowRight
+  ArrowRight,
+  Crown,
+  TrendingUp,
+  Info
 } from "lucide-react";
 import { 
   BarChart, 
@@ -65,7 +68,7 @@ const CATEGORIES = [
 ];
 
 export default function App() {
-  const { session, loading: authLoading, signOut } = useAuth();
+  const { session, profile, loading: authLoading, signOut } = useAuth();
   const { 
     products, 
     currentMonthProducts, 
@@ -324,6 +327,22 @@ export default function App() {
         </nav>
 
         <div className="p-6 border-t border-border space-y-3">
+          {profile?.subscription_status === 'active' ? (
+            <div className="flex w-full items-center justify-center gap-3 rounded-2xl px-5 py-3.5 font-bold text-amber-500 bg-amber-500/10 border border-amber-500/20">
+              <Crown size={20} />
+              <span>Plano Premium</span>
+            </div>
+          ) : (
+            <a 
+              href={`https://pay.cakto.com.br/3jig8io_888147?email=${encodeURIComponent(session?.user?.email || '')}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex w-full items-center justify-center gap-3 rounded-2xl px-5 py-3.5 font-bold text-white bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 shadow-lg shadow-orange-500/25 transition-all"
+            >
+              <Crown size={20} />
+              <span>Assinar Premium</span>
+            </a>
+          )}
           <button 
             onClick={() => setIsDarkMode(!isDarkMode)} 
             className="flex w-full items-center justify-between gap-3 rounded-2xl px-5 py-3.5 font-semibold text-slate-600 dark:text-slate-400 bg-slate-50 dark:bg-slate-900 border border-border hover:border-brand-primary/30 transition-all"
@@ -413,8 +432,8 @@ export default function App() {
                     {chartData.length > 0 && (
                       <div className="glass dark:glass rounded-3xl p-8 border border-border shadow-sm">
                         <h3 className="mb-8 font-bold text-lg tracking-tight">Gastos por Categoria</h3>
-                        <div className="h-64">
-                          <ResponsiveContainer width="100%" height="100%">
+                        <div className="h-64 w-full" style={{ minWidth: 0, minHeight: 0 }}>
+                          <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
                             <BarChart data={chartData} margin={{ bottom: 20 }}>
                               <XAxis 
                                 dataKey="name" 
